@@ -44,11 +44,15 @@ def scrape_udemy_interceptor(driver: Driver, data):
     max_courses = data.get("max_courses", 3)
 
     # 1. Google Dork Search
-    google_url = f"https://www.google.com/search?q=site:udemy.com/course/+{keyword}"
-    driver.get(google_url)
-    driver.sleep(2)
+    # 1. Search Udemy directly (Bypasses Google Datacenter CAPTCHAs)
+    encoded_keyword = keyword.replace(" ", "+")
+    udemy_search_url = f"https://www.udemy.com/courses/search/?q={encoded_keyword}"
+    print(f"Navigating to Udemy search: '{keyword}'...")
+    
+    driver.get(udemy_search_url)
+    driver.sleep(3) # Give Udemy's React frontend time to load search cards
 
-    links = driver.select_all('a[href*="udemy.com/course/"]')
+    links = driver.select_all('a[href*="/course/"]')
     courses = []
     seen = set()
 
@@ -57,15 +61,26 @@ def scrape_udemy_interceptor(driver: Driver, data):
         if not href:
             continue
 
+        # Clean URL to get standard course endpoint
         clean_url = href.split("?")[0].split("&")[0]
-        if "/course/" in clean_url and clean_url not in seen:
+        if not clean_url.startswith("http"):
+            clean_url = "https://www.udemy.com" + clean_url
+
+        # Ensure it's an actual course page (not category or instructor links)
+        course_slug = clean_url.split("/course/")[-1].strip("/")
+        if "/course/" in clean_url and course_slug and clean_url not in seen:
             seen.add(clean_url)
-            title = link.text.split("\n")[0].replace(" - Udemy", "").strip()
-            if title:
-                courses.append({"title": title, "url": clean_url, "reviews": []})
+            
+            # Extract clean title from page or fall back to URL slug
+            raw_title = link.text.strip().split("\n")[0] if link.text else ""
+            title = raw_title if len(raw_title) > 3 else course_slug.replace("-", " ").title()
+            
+            courses.append({"title": title, "url": clean_url, "reviews": []})
 
         if len(courses) >= max_courses:
             break
+
+    print(f"Found {len(courses)} courses directly from Udemy search.")
 
     # 2. Intercept Reviews per Course Page
     # 2. Extract reviews by querying Udemy's review endpoint directly using the page's course_id
