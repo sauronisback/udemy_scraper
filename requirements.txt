@@ -1,0 +1,4 @@
+botasaurus
+fastapi
+uvicorn[standard]
+pymongo
