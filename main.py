@@ -27,14 +27,17 @@ CACHE_EXPIRATION_DAYS = 7
 # --- BOTASAURUS SCRAPER FUNCTION ---
 @browser(
     headless=True,
-    block_images=True,
-    reuse_driver=True,
+    block_images=True, # Saves ~150MB of RAM by ignoring images
+    reuse_driver=True, # Keeps single Chrome process alive instead of spawning new ones
     add_arguments=[
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--window-size=1920,1080",
-    ],
+        "--disable-software-rasterizer",
+        "--disable-extensions",
+        "--window-size=800,600",                  # Smaller window size saves buffer RAM
+        "--js-flags=--max-old-space-size=256"      # Caps Chrome V8 engine RAM at 256MB
+    ]
 )
 def scrape_udemy_interceptor(driver: Driver, data):
     keyword = data.get("keyword")
