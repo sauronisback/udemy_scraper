@@ -2,10 +2,10 @@ services:
   - type: web
     name: udemy-scraper-api
     env: docker
-    plan: starter # Starter plan (1GB RAM) recommended for Chrome instances
+    plan: free # Changed to Free Tier (512MB RAM)
     dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: "10000"
       - key: MONGO_URI
-        sync: false # Set sync: false so Render prompts you to input your URI safely in the dashboard
+        sync: false
